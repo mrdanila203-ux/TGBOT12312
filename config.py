@@ -1,0 +1,12 @@
+import os
+
+BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+ADMIN_ID = int(os.getenv("ADMIN_ID", "6150661049"))
+PORT = int(os.getenv("PORT", "8080"))
+YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID", "")
+YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY", "")
+YOOKASSA_RETURN_URL = os.getenv("YOOKASSA_RETURN_URL", "")
+YOOKASSA_WEBHOOK_SECRET = os.getenv("YOOKASSA_WEBHOOK_SECRET", "")
+RUB_PRICE_WEEKLY = int(os.getenv("RUB_PRICE_WEEKLY", "45"))
+RUB_PRICE_MONTHLY = int(os.getenv("RUB_PRICE_MONTHLY", "100"))
+RUB_PRICE_YEARLY = int(os.getenv("RUB_PRICE_YEARLY", "550"))
