@@ -1430,8 +1430,7 @@ def handle_update(update: dict):
             original = db.get_cached_message(conn_id, event["chat"]["id"], msg_id)
             if original:
                 send(owner_id,
-                    f"🗑️ <b>Сообщение удалено</b>\n"
-                    f"👤 {chat_link}\n"
+                    f"🗑️ <b>В чате с {chat_link} удалено сообщение</b>\n"
                     f"🕐 {original['date']}\n\n"
                     f"<b>Текст:</b>\n{original['text']}"
                 )
@@ -1440,7 +1439,7 @@ def handle_update(update: dict):
 
             media = db.get_cached_media(conn_id, event["chat"]["id"], msg_id)
             if media:
-                caption = f"🗑️ <b>Удалено</b> · {media['file_type']}\n👤 {chat_link}\n🕐 {media['date']}"
+                caption = f"🗑️ <b>В чате с {chat_link} удалено медиа</b> · {media['file_type']}\n🕐 {media['date']}"
                 send_file(owner_id, media["file_id"], media["file_type"], caption)
                 db.delete_cached_media(conn_id, event["chat"]["id"], msg_id)
 
