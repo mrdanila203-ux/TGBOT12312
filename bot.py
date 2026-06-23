@@ -586,11 +586,23 @@ def rub_payment_button(user_id: int, plan: str, days: int, price: int) -> dict:
     return {"text": f"💳 {days} дней — {price} ₽", "callback_data": f"rub_{plan}"}
 
 
-def send_expired_message(user_id: int):
+def send_expired_message(user_id: int, event_type: str, chat_link: str):
     ref_link = get_ref_link(user_id)
     ref_count = db.get_referral_count(user_id)
+    if event_type == "edited":
+        event_text = (
+            f"✏️ <b>В чате с {chat_link} изменено сообщение</b>\n\n"
+            "Чтобы посмотреть, что было изменено, продлите подписку.\n\n"
+        )
+    else:
+        event_text = (
+            f"🗑️ <b>В чате с {chat_link} удалено сообщение</b>\n\n"
+            "Чтобы посмотреть удалённое сообщение, продлите подписку.\n\n"
+        )
+
     send(user_id,
-        "⏰ <b>Ваша подписка истекла</b>\n\n"
+        event_text
+        + "⏰ <b>Ваша подписка истекла</b>\n\n"
         "Для продолжения выберите вариант:\n\n"
         f"👥 <b>Пригласи друга</b> — получи +3 дня бесплатно\n"
         f"Приглашено: {ref_count} чел.\n\n"
@@ -610,6 +622,7 @@ def send_expired_message(user_id: int):
             ]
         }
     )
+    return True
 
 
 def main_keyboard():
@@ -1387,10 +1400,6 @@ def handle_update(update: dict):
         new_text = msg.get("text", "")
         owner_id = db.get_owner_by_connection(conn_id) or ADMIN_ID
 
-        if not db.is_sub_active(owner_id):
-            send_expired_message(owner_id)
-            return
-
         s = get_settings(owner_id)
         if not s["track_edited"]:
             return
@@ -1399,6 +1408,10 @@ def handle_update(update: dict):
 
         original = db.get_cached_message(conn_id, msg["chat"]["id"], msg["message_id"])
         if original and original["text"] != new_text:
+            if not db.is_sub_active(owner_id):
+                send_expired_message(owner_id, "edited", get_chat_link(msg["chat"]))
+                return
+
             send(owner_id,
                 f"✏️ <b>Сообщение изменено</b>\n"
                 f"👤 {get_chat_link(msg['chat'])}\n"
@@ -1414,10 +1427,6 @@ def handle_update(update: dict):
         conn_id = event.get("business_connection_id", "")
         owner_id = db.get_owner_by_connection(conn_id) or ADMIN_ID
 
-        if not db.is_sub_active(owner_id):
-            send_expired_message(owner_id)
-            return
-
         s = get_settings(owner_id)
         if not s["track_deleted"]:
             return
@@ -1425,6 +1434,9 @@ def handle_update(update: dict):
             return
 
         chat_link = get_chat_link(event["chat"])
+        if not db.is_sub_active(owner_id):
+            send_expired_message(owner_id, "deleted", chat_link)
+            return
 
         for msg_id in event["message_ids"]:
             original = db.get_cached_message(conn_id, event["chat"]["id"], msg_id)

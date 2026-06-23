@@ -202,7 +202,6 @@ def init_db():
         ALTER TABLE users
         ADD COLUMN IF NOT EXISTS sub_remaining_seconds INTEGER DEFAULT 0
     """)
-
     c.execute("""
         ALTER TABLE message_cache
         ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()
