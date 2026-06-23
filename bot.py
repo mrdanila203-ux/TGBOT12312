@@ -1434,26 +1434,42 @@ def handle_update(update: dict):
             return
 
         chat_link = get_chat_link(event["chat"])
+        chat_id = event["chat"]["id"]
+        deleted_items = []
+        for msg_id in event["message_ids"]:
+            original = db.get_cached_message(conn_id, chat_id, msg_id)
+            if original:
+                deleted_items.append(("message", msg_id, original))
+                continue
+
+            media = db.get_cached_media(conn_id, chat_id, msg_id)
+            if media:
+                deleted_items.append(("media", msg_id, media))
+
+        # Outgoing messages from the owner are not cached, so ignore their deletion.
+        if not deleted_items:
+            return
+
         if not db.is_sub_active(owner_id):
             send_expired_message(owner_id, "deleted", chat_link)
             return
 
-        for msg_id in event["message_ids"]:
-            original = db.get_cached_message(conn_id, event["chat"]["id"], msg_id)
-            if original:
+        for item_type, msg_id, cached_item in deleted_items:
+            if item_type == "message":
                 send(owner_id,
                     f"🗑️ <b>В чате с {chat_link} удалено сообщение</b>\n"
-                    f"🕐 {original['date']}\n\n"
-                    f"<b>Текст:</b>\n{original['text']}"
+                    f"🕐 {cached_item['date']}\n\n"
+                    f"<b>Текст:</b>\n{cached_item['text']}"
                 )
-                db.delete_cached_message(conn_id, event["chat"]["id"], msg_id)
+                db.delete_cached_message(conn_id, chat_id, msg_id)
                 continue
 
-            media = db.get_cached_media(conn_id, event["chat"]["id"], msg_id)
-            if media:
-                caption = f"🗑️ <b>В чате с {chat_link} удалено медиа</b> · {media['file_type']}\n🕐 {media['date']}"
-                send_file(owner_id, media["file_id"], media["file_type"], caption)
-                db.delete_cached_media(conn_id, event["chat"]["id"], msg_id)
+            caption = (
+                f"🗑️ <b>В чате с {chat_link} удалено медиа</b> · "
+                f"{cached_item['file_type']}\n🕐 {cached_item['date']}"
+            )
+            send_file(owner_id, cached_item["file_id"], cached_item["file_type"], caption)
+            db.delete_cached_media(conn_id, chat_id, msg_id)
 
 
 def main():
